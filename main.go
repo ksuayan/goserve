@@ -19,10 +19,12 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
+		// for PRODUCTION code credentials should be externalized source tree of course
     dsn := "root:admin@tcp(127.0.0.1:3306)/freestyle?charset=utf8mb4&parseTime=True&loc=Local"
+		// open DB connection for GORM
     database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 			Logger: logger.New(
-        log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer (Stdout in this case)
+        log.New(os.Stdout, "\r\n", log.LstdFlags),
         logger.Config{
             SlowThreshold: time.Second,   // Log queries slower than this threshold
             LogLevel: logger.Info,   // Log level (Info will log the SQL queries)
@@ -121,69 +123,16 @@ func GetRawData(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(response)
 }
 
-
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-    var users []types.User
-    DB.Find(&users)
-    json.NewEncoder(w).Encode(users)
-}
-
-func GetUser(w http.ResponseWriter, r *http.Request) {
-    params := mux.Vars(r)
-    var user types.User
-    if err := DB.First(&user, params["id"]).Error; err != nil {
-        http.Error(w, "User not found", http.StatusNotFound)
-        return
-    }
-    json.NewEncoder(w).Encode(user)
-}
-
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-    var user types.User
-    json.NewDecoder(r.Body).Decode(&user)
-    DB.Create(&user)
-    json.NewEncoder(w).Encode(user)
-}
-
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
-    params := mux.Vars(r)
-    var user types.User
-    if err := DB.First(&user, params["id"]).Error; err != nil {
-        http.Error(w, "User not found", http.StatusNotFound)
-        return
-    }
-    json.NewDecoder(r.Body).Decode(&user)
-    DB.Save(&user)
-    json.NewEncoder(w).Encode(user)
-}
-
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-    params := mux.Vars(r)
-    var user types.User
-    if err := DB.Delete(&user, params["id"]).Error; err != nil {
-        http.Error(w, "User not found", http.StatusNotFound)
-        return
-    }
-    json.NewEncoder(w).Encode("User deleted")
-}
-
 func main() {
     // Connect to the database
     ConnectDatabase()
     // Automatically migrate your schema
-    DB.AutoMigrate(&types.User{})
+    DB.AutoMigrate(&types.Glucose{})
     r := mux.NewRouter()
 
     // Define routes
 		r.HandleFunc("/api/glucose/{fromDate}/{toDate}", GetGlucoseRecords).Methods("GET")
 		r.HandleFunc("/api/raw/{fromDate}/{toDate}", GetRawData).Methods("GET")
-
-		// Users CRUD
-    r.HandleFunc("/api/users", GetUsers).Methods("GET")
-    r.HandleFunc("/api/users/{id}", GetUser).Methods("GET")
-    r.HandleFunc("/api/users", CreateUser).Methods("POST")
-    r.HandleFunc("/api/users/{id}", UpdateUser).Methods("PUT")
-    r.HandleFunc("/api/users/{id}", DeleteUser).Methods("DELETE")
 
 		// Serve static files from the React build directory
     staticDir := "./react-app/build"

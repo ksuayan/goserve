@@ -18,12 +18,6 @@ type Config struct {
 	DSN string `json:"dsn"`
 }
 
-type User struct {
-    ID    uint   `json:"id" gorm:"primaryKey"`
-    Name  string `json:"name"`
-    Email string `json:"email"`
-}
-
 type Glucose struct {
     DeviceTimestamp time.Time `json:"device_timestamp"`
     HistoricGlucoseMgDl sql.NullInt64 `json:"historic_glucose_mg_dl"`
