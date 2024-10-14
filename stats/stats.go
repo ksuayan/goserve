@@ -20,7 +20,7 @@ func SummarizeGlucose(buckets map[string][]int64) []types.PercentileSummary {
 	// Sort the keys
 	sort.Strings(keys)
 
-// Iterate over the sorted keys
+	// Iterate over the sorted keys
 	for _, key := range keys {
 		readings := buckets[key]
 		if len(readings) > 0 {
@@ -30,12 +30,12 @@ func SummarizeGlucose(buckets map[string][]int64) []types.PercentileSummary {
 
 			// Sort the readings
 			/*
-			sortedReadings := make([]int64, len(readings))
-			copy(sortedReadings, readings)
-			sort.Slice(sortedReadings, func(i, j int) bool {
-				return sortedReadings[i] < sortedReadings[j]
-			})
-			// Readings: sortedReadings,
+				sortedReadings := make([]int64, len(readings))
+				copy(sortedReadings, readings)
+				sort.Slice(sortedReadings, func(i, j int) bool {
+					return sortedReadings[i] < sortedReadings[j]
+				})
+				// Readings: sortedReadings,
 			*/
 
 			// Append the summary for the current bucket
@@ -46,7 +46,7 @@ func SummarizeGlucose(buckets map[string][]int64) []types.PercentileSummary {
 				Average:              average,
 			})
 		}
-	}	
+	}
 	return summary
 }
 

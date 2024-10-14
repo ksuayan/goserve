@@ -7,7 +7,7 @@ import (
 
 // PercentileSummary holds the percentiles, average, and the readings for a specific bucket
 type PercentileSummary struct {
-	BucketKey            string `json:"timeslot"`
+	BucketKey            string  `json:"timeslot"`
 	Readings             []int64 `json:"readings"`
 	FivePercentile       float64 `json:"pct_05"`
 	NinetyFivePercentile float64 `json:"pct_95"`
@@ -19,12 +19,12 @@ type Config struct {
 }
 
 type Glucose struct {
-    DeviceTimestamp time.Time `json:"device_timestamp"`
-    HistoricGlucoseMgDl sql.NullInt64 `json:"historic_glucose_mg_dl"`
-    RecordType int  `json:"-"`
+	DeviceTimestamp     time.Time     `json:"device_timestamp"`
+	HistoricGlucoseMgDl sql.NullInt64 `json:"historic_glucose_mg_dl"`
+	RecordType          int           `json:"-"`
 }
 
 type GlucoseResponse struct {
-    DeviceTimestamp string `json:"timestamp"`
-    HistoricGlucoseMgDl int64 `json:"glucose"`
+	DeviceTimestamp     string `json:"timestamp"`
+	HistoricGlucoseMgDl int64  `json:"glucose"`
 }
