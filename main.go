@@ -9,6 +9,7 @@ import (
 
 	"goserve/stats"
 	"goserve/types"
+	"goserve/utils"
 
 	"github.com/gorilla/mux"
 	"gorm.io/driver/mysql"
@@ -18,11 +19,12 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase() {
+func ConnectDatabase(config *types.Config) {
 	// for PRODUCTION code credentials should be externalized source tree of course
-	dsn := "root:admin@tcp(127.0.0.1:3306)/freestyle?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn := "root:admin@tcp(127.0.0.1:3306)/freestyle?charset=utf8mb4&parseTime=True&loc=Local"
+
 	// open DB connection for GORM
-	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	database, err := gorm.Open(mysql.Open(config.DSN), &gorm.Config{
 		Logger: logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags),
 			logger.Config{
@@ -36,6 +38,20 @@ func ConnectDatabase() {
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err)
 	}
+
+	sqlDB, err := database.DB()
+	if err != nil {
+		log.Fatal("Failed to get sqlDB instance: ", err)
+	}
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(25)
+	sqlDB.SetConnMaxLifetime(time.Minute * 5)
+
+	// Test the connection
+	if err := sqlDB.Ping(); err != nil {
+		log.Fatal(err)
+	}
+
 	DB = database
 }
 
@@ -123,9 +139,49 @@ func GetRawData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+
+func GetSerialNumbers() ([]types.GlucoseSummary, error) {
+	var summaries []types.GlucoseSummary
+
+	// Custom SQL query to get first and last timestamps for each serial_number
+	query := `
+			SELECT serial_number,
+						 MIN(device_timestamp) AS first_timestamp,
+						 MAX(device_timestamp) AS last_timestamp
+			FROM glucose
+			GROUP BY serial_number
+	`
+
+	// Execute the query and scan the results into the summaries slice
+	if err := DB.Raw(query).Scan(&summaries).Error; err != nil {
+			return nil, err
+	}
+
+	return summaries, nil
+}
+
+func GetSerialNumbersHandler(w http.ResponseWriter, r *http.Request) {
+	summaries, err := GetSerialNumbers()
+	if err != nil {
+			http.Error(w, "Error retrieving glucose serial numbers", http.StatusInternalServerError)
+			return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(summaries)
+}
+
+
 func main() {
+
+	// Load configuration from file
+	config, err := utils.LoadConfig("config.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Connect to the database
-	ConnectDatabase()
+	ConnectDatabase(config)
 	// Automatically migrate your schema
 	DB.AutoMigrate(&types.Glucose{})
 	r := mux.NewRouter()
@@ -133,6 +189,7 @@ func main() {
 	// Define routes
 	r.HandleFunc("/api/glucose/{fromDate}/{toDate}", GetGlucoseRecords).Methods("GET")
 	r.HandleFunc("/api/raw/{fromDate}/{toDate}", GetRawData).Methods("GET")
+	r.HandleFunc("/api/serials", GetSerialNumbersHandler).Methods("GET")
 
 	// Serve static files from the React build directory
 	staticDir := "./react-app/build"

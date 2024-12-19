@@ -8,8 +8,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(6px + 2vmin);
+  font-size: calc(6px + 1vmin);
   color: white;
+}
+
+.App-header h1 {
+  margin: 0px;
+  padding: 10px 0px;
 }
 
 .App-footer {

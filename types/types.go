@@ -28,3 +28,9 @@ type GlucoseResponse struct {
 	DeviceTimestamp     string `json:"timestamp"`
 	HistoricGlucoseMgDl int64  `json:"glucose"`
 }
+
+type GlucoseSummary struct {
+	SerialNumber   string    `json:"serial_number"`
+	FirstTimestamp time.Time `json:"first_timestamp"`
+	LastTimestamp  time.Time `json:"last_timestamp"`
+}
